@@ -3,18 +3,6 @@ name: AI Code Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - '**.c'
-      - '**.h'
-      - '**.sql'
-      - '**/Makefile'
-      - '**/Makefile.*'
-      - '!doc/**'
-      - '!contrib/**'
-
-concurrency:
-  group: code-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
 
 jobs:
   ai-review:
