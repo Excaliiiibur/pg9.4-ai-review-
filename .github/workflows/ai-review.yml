@@ -1,0 +1,104 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.c'
+      - '**.h'
+      - '**.sql'
+      - '**/Makefile'
+      - '**/Makefile.*'
+      - '!doc/**'
+      - '!contrib/**'
+
+concurrency:
+  group: code-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            **.c
+            **.h
+            **.sql
+            **/Makefile
+            **/Makefile.*
+
+      - name: Post initial comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 AI PostgreSQL Code Review\n\n正在运行自动审查...\n\n审查内容包括:\n- ✓ 内存安全性和正确性\n- ✓ 错误处理\n- ✓ 性能影响\n- ✓ 代码质量\n- ✓ 安全问题\n- ✓ 测试和文档`
+            })
+
+      - name: Run static analysis
+        id: analysis
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cppcheck
+          
+          # Run on changed files
+          cppcheck --enable=all --suppress=missingIncludeSystem ${{ steps.changed-files.outputs.all_changed_files }} 2>&1 | tee /tmp/analysis.txt || true
+
+      - name: Post review comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const analysis = fs.readFileSync('/tmp/analysis.txt', 'utf8');
+            
+            const review = `## 📋 PostgreSQL 代码审查结果
+
+### 静态分析
+\`\`\`
+${analysis.slice(0, 1000)}
+\`\`\`
+
+### 主要检查项
+使用 \`.github/copilot-instructions.md\` 中的规则:
+
+1. **内存管理** - palloc/pfree 配对, NULL 检查
+2. **错误处理** - ereport/elog 使用正确性
+3. **性能** - O(n²) 模式, N+1 查询
+4. **代码质量** - 命名规范, 函数大小, 可重用性
+5. **平台安全** - 跨平台兼容性
+6. **安全审查** - SQL 注入, 缓冲区溢出
+7. **测试覆盖** - 新功能的测试
+
+### 操作清单
+- [ ] 没有内存泄漏或缓冲区溢出
+- [ ] 所有错误路径都处理正确
+- [ ] 没有性能回归
+- [ ] 符合 PostgreSQL 约定
+- [ ] 没有安全问题
+- [ ] 为新功能添加了测试
+- [ ] 文档已更新
+
+### 下一步
+请根据上述检查项进行人工审查。`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: review
+            })

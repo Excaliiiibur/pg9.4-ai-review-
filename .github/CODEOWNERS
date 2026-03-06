@@ -1,0 +1,48 @@
+# PostgreSQL CODEOWNERS
+# 此文件定义哪些用户应该审查特定代码区域的更改
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# 默认审查者（所有更改）
+* @core-team
+
+# 后端核心模块
+/src/backend/access/ @backend-access-team
+/src/backend/catalog/ @backend-catalog-team
+/src/backend/executor/ @backend-executor-team
+/src/backend/optimizer/ @backend-optimizer-team
+/src/backend/parser/ @backend-parser-team
+/src/backend/planner/ @backend-planner-team
+/src/backend/storage/ @backend-storage-team
+/src/backend/utils/ @backend-utils-team
+
+# 特定功能区域
+/src/backend/replication/ @replication-team
+/src/backend/foreign/ @foreign-data-team
+/src/backend/tsearch/ @tsearch-team
+
+# 接口和工具
+/src/bin/ @tools-team
+/src/interfaces/libpq/ @libpq-team
+/src/interfaces/ecpg/ @ecpg-team
+
+# 文档
+/doc/ @doc-team *.md
+
+# 构建系统
+/GNUmakefile.in @build-team
+/Makefile* @build-team
+/configure* @build-team
+/src/Makefile.global.in @build-team
+
+# 配置和平台特定
+/src/port/ @platform-team
+/src/template/ @platform-team
+/src/makefiles/ @build-team
+
+# 本文件本身
+/CODEOWNERS @project-lead
+
+# AI 审查配置（任何修改都需要审查）
+/.github/copilot-instructions.md @code-review-team
+/.github/workflows/ai-review.yml @code-review-team
+/.github/agents/ @code-review-team
